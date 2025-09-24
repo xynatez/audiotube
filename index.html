@@ -334,6 +334,22 @@
             margin-top: 20px;
         }
 
+        /* debug overlay */
+        .debug-overlay {
+            position: fixed;
+            right: 12px;
+            top: 12px;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            font-size: 12px;
+            padding: 8px 10px;
+            border-radius: 8px;
+            z-index: 9999;
+            max-width: 320px;
+            line-height: 1.3;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.4);
+        }
+
         .feature-item {
             background: white;
             padding: 15px;
@@ -394,6 +410,9 @@
         <div class="button-row">
             <button class="btn btn-primary" onclick="loadAudio()">
                 ▶ Play
+            </button>
+            <button class="btn btn-primary" onclick="pasteAndPlay()">
+                ⎘ Paste & Play
             </button>
             <button class="btn btn-secondary" onclick="clearAll()">
                 🗑 Clear
@@ -469,6 +488,11 @@
         <div id="youtube-player"></div>
     </div>
 
+    <div id="debug-overlay" class="debug-overlay" style="display:none">
+        <div><strong>origin:</strong> <span id="dbg-origin"></span></div>
+        <div><strong>iframe src:</strong> <span id="dbg-iframe"></span></div>
+    </div>
+
     <script src="https://www.youtube.com/iframe_api"></script>
     <script>
         let player;
@@ -478,6 +502,30 @@
         let isDragging = false;
         let updateInterval;
     let pendingPlay = false; // flag set when user requested play before player ready
+
+        // Optional: set this to a specific origin string (e.g. 'https://yourdomain.com')
+        // if you always host under a fixed domain. Leave null to use window.location.origin.
+        const allowedOrigin = null; // e.g. 'https://yourmusics.netlify.app'
+
+        function updateDebugOverlay(show) {
+            const overlay = document.getElementById('debug-overlay');
+            if (!overlay) return;
+            const originSpan = document.getElementById('dbg-origin');
+            const iframeSpan = document.getElementById('dbg-iframe');
+            const originToShow = (allowedOrigin && allowedOrigin.length) ? allowedOrigin : window.location.origin;
+            originSpan.textContent = originToShow;
+            if (player && player.getIframe) {
+                try {
+                    const iframe = player.getIframe();
+                    iframeSpan.textContent = iframe ? iframe.src : '(not available)';
+                } catch (e) {
+                    iframeSpan.textContent = '(error reading iframe)';
+                }
+            } else {
+                iframeSpan.textContent = '(none)';
+            }
+            overlay.style.display = show ? 'block' : 'none';
+        }
 
         // Extract YouTube video ID from URL
         function extractVideoID(url) {
@@ -564,6 +612,8 @@
                     // do not rely on autoplay on mobile — initiate play from user gesture
                     autoplay: 0,
                     playsinline: 1,
+                        // ensure origin matches the page origin to avoid postMessage mismatches
+                        origin: (allowedOrigin && allowedOrigin.length) ? allowedOrigin : window.location.origin,
                     controls: 0,
                     disablekb: 1,
                     fs: 0,
@@ -578,6 +628,8 @@
                     'onError': onPlayerError
                 }
             });
+            // show debug overlay after creating player
+            updateDebugOverlay(true);
         }
 
         // Player ready event
@@ -830,6 +882,31 @@
                 loadAudio();
             }
         });
+
+        // Paste from clipboard and play (requires HTTPS + permission)
+        function pasteAndPlay() {
+            const input = document.getElementById('yt-url');
+            if (!navigator.clipboard || !navigator.clipboard.readText) {
+                showError('Clipboard API not available. Paste manually.');
+                input.focus();
+                return;
+            }
+            navigator.clipboard.readText().then(text => {
+                if (!text || !text.trim()) {
+                    showError('Clipboard is empty.');
+                    input.focus();
+                    return;
+                }
+                input.value = text.trim();
+                // user gesture already occurred by clicking Paste & Play, set pendingPlay
+                pendingPlay = true;
+                loadAudio();
+            }).catch(err => {
+                console.warn('Clipboard read failed:', err);
+                showError('Cannot read clipboard. Please paste manually.');
+                input.focus();
+            });
+        }
 
         // YouTube API ready
         function onYouTubeIframeAPIReady() {
