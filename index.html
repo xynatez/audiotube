@@ -472,11 +472,12 @@
     <script src="https://www.youtube.com/iframe_api"></script>
     <script>
         let player;
-        let isPlaying = false;
+    let isPlaying = false;
         let isLooping = false;
         let duration = 0;
         let isDragging = false;
         let updateInterval;
+    let pendingPlay = false; // flag set when user requested play before player ready
 
         // Extract YouTube video ID from URL
         function extractVideoID(url) {
@@ -552,12 +553,17 @@
             }
 
             // Create new player
+            // mark that user requested playback (gesture)
+            pendingPlay = true;
+
             player = new YT.Player('youtube-player', {
                 height: '1',
                 width: '1',
                 videoId: videoId,
                 playerVars: {
-                    autoplay: 1,
+                    // do not rely on autoplay on mobile — initiate play from user gesture
+                    autoplay: 0,
+                    playsinline: 1,
                     controls: 0,
                     disablekb: 1,
                     fs: 0,
@@ -587,8 +593,31 @@
 
             // Set initial volume
             player.setVolume(50);
-            isPlaying = true;
-            updatePlayPauseButton();
+            // try to play only if user requested play (gesture)
+            if (pendingPlay) {
+                // Some mobile browsers block play() unless it's in direct user gesture;
+                // attempt play and handle the returned promise.
+                const playResult = player.playVideo && player.playVideo();
+                if (playResult && typeof playResult.then === 'function') {
+                    playResult.then(() => {
+                        isPlaying = true;
+                        updatePlayPauseButton();
+                    }).catch((err) => {
+                        // Playback blocked — inform user to tap the play button
+                        isPlaying = false;
+                        updatePlayPauseButton();
+                        showError('Playback blocked by browser. Tap the Play button to start.');
+                    });
+                } else {
+                    // Older API or no promise — assume playing
+                    isPlaying = true;
+                    updatePlayPauseButton();
+                }
+                pendingPlay = false;
+            } else {
+                isPlaying = false;
+                updatePlayPauseButton();
+            }
 
             // Start progress updates
             updateInterval = setInterval(updateProgress, 500);
@@ -657,7 +686,20 @@
             if (isPlaying) {
                 player.pauseVideo();
             } else {
-                player.playVideo();
+                // attempt to play and catch potential promise rejection on mobile
+                const playResult = player.playVideo && player.playVideo();
+                if (playResult && typeof playResult.then === 'function') {
+                    playResult.then(() => {
+                        isPlaying = true;
+                        updatePlayPauseButton();
+                    }).catch(() => {
+                        showError('Browser blocked autoplay. Tap the player area or Play button again.');
+                    });
+                } else {
+                    // assume it started
+                    isPlaying = true;
+                    updatePlayPauseButton();
+                }
             }
         }
 
@@ -703,20 +745,33 @@
 
         // Clear all
         function clearAll() {
-            document.getElementById('yt-url').value = '';
-            document.getElementById('player-card').style.display = 'none';
+            const input = document.getElementById('yt-url');
+            const val = input.value.trim();
 
-            if (player) {
-                player.destroy();
-                player = null;
-                clearInterval(updateInterval);
+            if (val.length > 0) {
+                // If there's text, clear it and reset player
+                input.value = '';
+                document.getElementById('player-card').style.display = 'none';
+
+                if (player) {
+                    player.destroy();
+                    player = null;
+                    clearInterval(updateInterval);
+                }
+
+                isPlaying = false;
+                isLooping = false;
+                duration = 0;
+                document.getElementById('loop-btn').classList.remove('active');
+                document.getElementById('loop-btn').textContent = '🔁 Loop';
+            } else {
+                // If input is already empty, show instruction text
+                input.value = 'paste saja';
+                // keep focus so user can paste immediately
+                input.focus();
+                // place caret at end
+                input.setSelectionRange(input.value.length, input.value.length);
             }
-
-            isPlaying = false;
-            isLooping = false;
-            duration = 0;
-            document.getElementById('loop-btn').classList.remove('active');
-            document.getElementById('loop-btn').textContent = '🔁 Loop';
         }
 
         // Progress bar click/drag functionality
