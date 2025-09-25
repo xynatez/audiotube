@@ -3,8 +3,66 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AudioTube - iOS Style Player</title>
+    <title>AudioTube - Streamlined YouTube Audio Player</title>
     <style>
+        :root {
+            color-scheme: light;
+            --body-bg: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            --container-bg: rgba(255, 255, 255, 0.9);
+            --container-border: rgba(255, 255, 255, 0.35);
+            --container-shadow: 0 22px 48px rgba(15, 35, 95, 0.12);
+            --text-primary: #1c1c1e;
+            --text-secondary: #636366;
+            --glass-overlay: rgba(255, 255, 255, 0.5);
+            --input-bg: #f2f2f7;
+            --input-border: #d1d1d6;
+            --input-focus-ring: rgba(10, 132, 255, 0.18);
+            --button-primary: #0a84ff;
+            --button-primary-hover: #0060df;
+            --button-secondary: rgba(10, 132, 255, 0.12);
+            --button-secondary-text: #0a84ff;
+            --divider: rgba(60, 60, 67, 0.18);
+            --surface-muted: rgba(242, 242, 247, 0.85);
+            --status-playing: #30d158;
+            --status-paused: #ffd60a;
+            --status-loading: #0a84ff;
+            --status-error: #ff453a;
+            --terminal-bg: rgba(22, 22, 26, 0.92);
+            --terminal-text: #f5f5f7;
+            --terminal-prompt: #98a0ff;
+            --terminal-divider: rgba(245, 245, 247, 0.12);
+            --progress-track: rgba(142, 142, 147, 0.24);
+            --thumb-bg: #ffffff;
+            --card-outline: rgba(255, 255, 255, 0.25);
+        }
+
+        body[data-theme="dark"] {
+            color-scheme: dark;
+            --body-bg: radial-gradient(circle at 10% 20%, #1c1c25 0%, #05070c 100%);
+            --container-bg: rgba(28, 28, 30, 0.88);
+            --container-border: rgba(255, 255, 255, 0.06);
+            --container-shadow: 0 28px 60px rgba(0, 0, 0, 0.5);
+            --text-primary: #f5f5f7;
+            --text-secondary: #d1d1d6;
+            --glass-overlay: rgba(44, 44, 46, 0.6);
+            --input-bg: rgba(44, 44, 46, 0.9);
+            --input-border: rgba(255, 255, 255, 0.08);
+            --input-focus-ring: rgba(10, 132, 255, 0.32);
+            --button-primary: #0a84ff;
+            --button-primary-hover: #409cff;
+            --button-secondary: rgba(99, 230, 226, 0.12);
+            --button-secondary-text: #63e6e2;
+            --divider: rgba(255, 255, 255, 0.08);
+            --surface-muted: rgba(44, 44, 46, 0.86);
+            --terminal-bg: rgba(15, 15, 20, 0.95);
+            --terminal-text: #d8d8ff;
+            --terminal-prompt: #7dd3fc;
+            --terminal-divider: rgba(141, 141, 153, 0.2);
+            --progress-track: rgba(199, 199, 204, 0.25);
+            --thumb-bg: rgba(10, 132, 255, 1);
+            --card-outline: rgba(255, 255, 255, 0.08);
+        }
+
         * {
             margin: 0;
             padding: 0;
@@ -13,80 +71,142 @@
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            background: var(--body-bg);
             min-height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
-            padding: 20px;
+            padding: 28px 18px;
+            color: var(--text-primary);
+            transition: background 0.5s ease, color 0.3s ease;
         }
 
         .container {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(20px);
-            border-radius: 25px;
-            padding: 30px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-            max-width: 400px;
-            width: 100%;
-            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: var(--container-bg);
+            backdrop-filter: blur(26px) saturate(140%);
+            border-radius: 26px;
+            padding: 32px 28px 30px;
+            box-shadow: var(--container-shadow);
+            width: min(420px, 100%);
+            border: 1px solid var(--container-border);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .container::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(160deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.02));
+            opacity: 0.65;
+            pointer-events: none;
         }
 
         .header {
             text-align: center;
-            margin-bottom: 25px;
+            margin-bottom: 22px;
+            position: relative;
+            z-index: 2;
         }
 
         .logo {
-            font-size: 2rem;
+            font-size: 2.2rem;
             font-weight: 700;
-            color: #007AFF;
-            margin-bottom: 5px;
+            background: linear-gradient(135deg, #0a84ff 10%, #5e5ce6 90%);
+            -webkit-background-clip: text;
+            color: transparent;
+            letter-spacing: -0.5px;
         }
 
         .subtitle {
-            color: #8E8E93;
-            font-size: 0.9rem;
-            font-weight: 400;
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            margin-top: 6px;
+        }
+
+        .theme-toggle {
+            display: inline-flex;
+            padding: 4px;
+            background: var(--surface-muted);
+            border-radius: 18px;
+            border: 1px solid var(--card-outline);
+            margin: 0 auto 24px;
+            position: relative;
+            z-index: 2;
+        }
+
+        .theme-toggle button {
+            border: none;
+            background: transparent;
+            color: var(--text-secondary);
+            padding: 8px 14px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            border-radius: 14px;
+            cursor: pointer;
+            transition: all 0.25s ease;
+        }
+
+        .theme-toggle button.active {
+            background: rgba(10, 132, 255, 0.18);
+            color: var(--text-primary);
+            box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.12);
         }
 
         .input-section {
-            margin-bottom: 20px;
+            margin-bottom: 18px;
+            position: relative;
+            z-index: 2;
         }
 
         .url-input {
             width: 100%;
-            padding: 12px 16px;
-            border: 1px solid #E5E5EA;
-            border-radius: 12px;
+            padding: 14px 18px;
+            border: 1px solid var(--input-border);
+            border-radius: 16px;
             font-size: 16px;
+            background: var(--input-bg);
+            color: var(--text-primary);
             outline: none;
-            transition: all 0.2s ease;
-            background: #F2F2F7;
-            color: #1C1C1E;
+            transition: border 0.2s ease, background 0.3s ease, box-shadow 0.2s ease;
         }
 
         .url-input:focus {
-            border-color: #007AFF;
-            background: white;
-            box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.1);
+            border-color: var(--button-primary);
+            background: rgba(255, 255, 255, 0.95);
+            box-shadow: 0 0 0 4px var(--input-focus-ring);
+        }
+
+        .error {
+            background: rgba(255, 69, 58, 0.14);
+            color: var(--status-error);
+            padding: 12px 16px;
+            border-radius: 14px;
+            margin: 10px 0 18px;
+            display: none;
+            font-size: 0.9rem;
+            border-left: 3px solid var(--status-error);
         }
 
         .button-row {
-            display: flex;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
             gap: 10px;
             margin-bottom: 20px;
+            position: relative;
+            z-index: 2;
         }
 
         .btn {
-            flex: 1;
             padding: 12px;
-            border: none;
-            border-radius: 12px;
-            font-size: 16px;
+            border-radius: 16px;
+            font-size: 15px;
             font-weight: 600;
+            border: none;
             cursor: pointer;
-            transition: all 0.2s ease;
+            transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.2s ease;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -94,232 +214,50 @@
         }
 
         .btn-primary {
-            background: #007AFF;
-            color: white;
+            background: var(--button-primary);
+            color: #fff;
+            box-shadow: 0 12px 18px rgba(10, 132, 255, 0.25);
         }
 
         .btn-primary:hover:not(:disabled) {
-            background: #0056CC;
-            transform: scale(0.98);
+            transform: translateY(-2px);
+            box-shadow: 0 18px 24px rgba(10, 132, 255, 0.28);
+            background: var(--button-primary-hover);
         }
 
         .btn-secondary {
-            background: #F2F2F7;
-            color: #007AFF;
+            background: var(--button-secondary);
+            color: var(--button-secondary-text);
+            border: 1px solid rgba(10, 132, 255, 0.24);
         }
 
         .btn-secondary:hover:not(:disabled) {
-            background: #E5E5EA;
-            transform: scale(0.98);
+            transform: translateY(-2px);
+            box-shadow: 0 14px 22px rgba(99, 230, 226, 0.25);
         }
 
         .btn:disabled {
             opacity: 0.5;
             cursor: not-allowed;
             transform: none !important;
-        }
-
-        .player-card {
-            background: #F2F2F7;
-            border-radius: 16px;
-            padding: 20px;
-            margin-bottom: 15px;
-            display: none;
-        }
-
-        .song-info {
-            text-align: center;
-            margin-bottom: 20px;
-        }
-
-        .song-title {
-            font-size: 1.1rem;
-            font-weight: 600;
-            color: #1C1C1E;
-            margin-bottom: 5px;
-            line-height: 1.3;
-        }
-
-        .song-status {
-            color: #8E8E93;
-            font-size: 0.9rem;
-        }
-
-        .progress-section {
-            margin-bottom: 20px;
-        }
-
-        .time-display {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 8px;
-            font-size: 0.8rem;
-            color: #8E8E93;
-            font-weight: 500;
-        }
-
-        .progress-container {
-            position: relative;
-            height: 4px;
-            background: #E5E5EA;
-            border-radius: 2px;
-            cursor: pointer;
-        }
-
-        .progress-bar {
-            height: 100%;
-            background: #007AFF;
-            border-radius: 2px;
-            width: 0%;
-            transition: width 0.1s linear;
-        }
-
-        .progress-thumb {
-            position: absolute;
-            top: 50%;
-            left: 0%;
-            width: 16px;
-            height: 16px;
-            background: white;
-            border: 2px solid #007AFF;
-            border-radius: 50%;
-            transform: translate(-50%, -50%);
-            cursor: grab;
-            transition: all 0.1s ease;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-        }
-
-        .progress-thumb:active {
-            cursor: grabbing;
-            transform: translate(-50%, -50%) scale(1.2);
-        }
-
-        .main-controls {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 30px;
-            margin-bottom: 20px;
-        }
-
-        .control-btn {
-            width: 50px;
-            height: 50px;
-            border: none;
-            border-radius: 25px;
-            background: white;
-            color: #007AFF;
-            font-size: 24px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-            transition: all 0.2s ease;
-        }
-
-        .control-btn:hover {
-            transform: scale(1.05);
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
-        }
-
-        .control-btn:active {
-            transform: scale(0.95);
-        }
-
-        .play-btn {
-            width: 60px;
-            height: 60px;
-            background: #007AFF;
-            color: white;
-            font-size: 28px;
-        }
-
-        .secondary-controls {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .volume-control {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            flex: 1;
-            margin-right: 20px;
-        }
-
-        .volume-icon {
-            color: #8E8E93;
-            font-size: 16px;
-        }
-
-        .volume-slider {
-            flex: 1;
-            -webkit-appearance: none;
-            height: 4px;
-            border-radius: 2px;
-            background: #E5E5EA;
-            outline: none;
-            cursor: pointer;
-        }
-
-        .volume-slider::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            width: 16px;
-            height: 16px;
-            border-radius: 50%;
-            background: white;
-            border: 2px solid #007AFF;
-            cursor: pointer;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
-        }
-
-        .loop-toggle {
-            padding: 8px 12px;
-            border: 1px solid #E5E5EA;
-            border-radius: 20px;
-            background: white;
-            color: #8E8E93;
-            font-size: 14px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
-
-        .loop-toggle.active {
-            background: #007AFF;
-            color: white;
-            border-color: #007AFF;
-        }
-
-        .error {
-            background: #FFEBEE;
-            color: #D32F2F;
-            padding: 12px 16px;
-            border-radius: 12px;
-            margin: 10px 0;
-            display: none;
-            font-size: 14px;
-            border-left: 3px solid #D32F2F;
+            box-shadow: none !important;
         }
 
         .loading {
             text-align: center;
-            padding: 20px;
+            padding: 20px 16px;
             display: none;
+            color: var(--text-secondary);
         }
 
         .spinner {
-            width: 24px;
-            height: 24px;
-            border: 2px solid #E5E5EA;
-            border-top: 2px solid #007AFF;
+            width: 26px;
+            height: 26px;
+            border: 3px solid rgba(10, 132, 255, 0.14);
+            border-top: 3px solid var(--button-primary);
             border-radius: 50%;
             animation: spin 1s linear infinite;
-            margin: 0 auto 10px;
+            margin: 0 auto 12px;
         }
 
         @keyframes spin {
@@ -327,64 +265,328 @@
             100% { transform: rotate(360deg); }
         }
 
-        .features-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-            margin-top: 20px;
+        .player-card {
+            background: var(--surface-muted);
+            border-radius: 18px;
+            padding: 22px;
+            margin-bottom: 18px;
+            display: none;
+            position: relative;
+            z-index: 2;
+            border: 1px solid var(--card-outline);
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
         }
 
-        /* debug overlay */
-        .debug-overlay {
-            position: fixed;
-            right: 12px;
-            top: 12px;
-            background: rgba(0,0,0,0.7);
-            color: white;
-            font-size: 12px;
-            padding: 8px 10px;
-            border-radius: 8px;
-            z-index: 9999;
-            max-width: 320px;
-            line-height: 1.3;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.4);
-        }
-
-        .feature-item {
-            background: white;
-            padding: 15px;
-            border-radius: 12px;
+        .song-info {
             text-align: center;
-            box-shadow: 0 1px 6px rgba(0, 0, 0, 0.05);
+            margin-bottom: 18px;
         }
 
-        .feature-icon {
-            font-size: 20px;
-            margin-bottom: 5px;
+        .song-title {
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            line-height: 1.35;
+            margin-bottom: 6px;
         }
 
-        .feature-text {
-            font-size: 12px;
-            color: #8E8E93;
-            font-weight: 500;
+        .song-status {
+            font-size: 0.92rem;
+            color: var(--text-secondary);
+        }
+
+        .progress-section {
+            margin-bottom: 22px;
+        }
+
+        .time-display {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-size: 0.82rem;
+            color: var(--text-secondary);
+            font-weight: 600;
+        }
+
+        .progress-container {
+            position: relative;
+            height: 6px;
+            background: var(--progress-track);
+            border-radius: 3px;
+            cursor: pointer;
+            touch-action: none;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(135deg, var(--button-primary) 10%, #5e5ce6 100%);
+            border-radius: 3px;
+            width: 0%;
+            transition: width 0.15s linear;
+        }
+
+        .progress-thumb {
+            position: absolute;
+            top: 50%;
+            left: 0%;
+            width: 18px;
+            height: 18px;
+            background: var(--thumb-bg);
+            border: 3px solid var(--button-primary);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            cursor: grab;
+            box-shadow: 0 4px 12px rgba(10, 132, 255, 0.25);
+            transition: transform 0.15s ease;
+            touch-action: none;
+        }
+
+        .progress-thumb:active {
+            cursor: grabbing;
+            transform: translate(-50%, -50%) scale(1.15);
+        }
+
+        .main-controls {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 28px;
+            margin-bottom: 22px;
+        }
+
+        .control-btn {
+            width: 52px;
+            height: 52px;
+            border-radius: 26px;
+            border: none;
+            background: rgba(255, 255, 255, 0.82);
+            color: var(--button-primary);
+            font-size: 24px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 10px 18px rgba(10, 132, 255, 0.18);
+            transition: transform 0.18s ease, box-shadow 0.18s ease;
+        }
+
+        .control-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 14px 26px rgba(10, 132, 255, 0.24);
+        }
+
+        .control-btn:active {
+            transform: scale(0.95);
+        }
+
+        .play-btn {
+            width: 66px;
+            height: 66px;
+            font-size: 30px;
+            background: var(--button-primary);
+            color: #fff;
+        }
+
+        .secondary-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 18px;
+            flex-wrap: wrap;
+        }
+
+        .volume-control {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex: 1;
+            min-width: 0;
+        }
+
+        .volume-icon {
+            color: var(--text-secondary);
+            font-size: 18px;
+        }
+
+        .volume-slider {
+            flex: 1;
+            -webkit-appearance: none;
+            height: 6px;
+            border-radius: 3px;
+            background: var(--progress-track);
+            outline: none;
+            cursor: pointer;
+        }
+
+        .volume-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--thumb-bg);
+            border: 3px solid var(--button-primary);
+            box-shadow: 0 3px 10px rgba(10, 132, 255, 0.2);
+        }
+
+        .volume-slider::-moz-range-thumb {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--thumb-bg);
+            border: 3px solid var(--button-primary);
+            box-shadow: 0 3px 10px rgba(10, 132, 255, 0.2);
+        }
+
+        .loop-toggle {
+            padding: 10px 18px;
+            border-radius: 20px;
+            border: 1px solid var(--card-outline);
+            background: rgba(10, 132, 255, 0.12);
+            color: var(--button-primary);
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .loop-toggle.active {
+            background: var(--button-primary);
+            color: #fff;
+            box-shadow: 0 14px 22px rgba(10, 132, 255, 0.28);
+        }
+
+        .mac-terminal {
+            background: var(--terminal-bg);
+            color: var(--terminal-text);
+            border-radius: 18px;
+            margin-top: 26px;
+            padding: 0 0 18px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+            position: relative;
+            z-index: 2;
+        }
+
+        .mac-terminal-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 14px 18px;
+            border-bottom: 1px solid var(--terminal-divider);
+        }
+
+        .mac-terminal-header .traffic-light {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-flex;
+        }
+
+        .traffic-red { background: #ff5f56; }
+        .traffic-yellow { background: #ffbd2e; }
+        .traffic-green { background: #27c93f; }
+
+        .mac-terminal-title {
+            margin-left: auto;
+            font-size: 0.8rem;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            opacity: 0.7;
+        }
+
+        .mac-terminal-body {
+            padding: 16px 18px 18px;
+            font-family: 'SFMono-Regular', SFMono-Regular, ui-monospace, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+            font-size: 0.85rem;
+            line-height: 1.6;
+        }
+
+        .terminal-line {
+            display: flex;
+            align-items: baseline;
+            gap: 12px;
+            margin-bottom: 8px;
+            flex-wrap: wrap;
+            word-break: break-word;
+        }
+
+        .terminal-line:last-child {
+            margin-bottom: 0;
+        }
+
+        .prompt {
+            color: var(--terminal-prompt);
+        }
+
+        .terminal-divider {
+            height: 1px;
+            background: var(--terminal-divider);
+            margin: 12px 0 14px;
+        }
+
+        .status-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--status-loading);
+            box-shadow: 0 0 12px rgba(10, 132, 255, 0.35);
+            transition: background 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .status-dot.playing {
+            background: var(--status-playing);
+            box-shadow: 0 0 12px rgba(48, 209, 88, 0.45);
+        }
+
+        .status-dot.paused {
+            background: var(--status-paused);
+            box-shadow: 0 0 12px rgba(255, 214, 10, 0.4);
+        }
+
+        .status-dot.loading {
+            background: var(--status-loading);
+            box-shadow: 0 0 12px rgba(10, 132, 255, 0.42);
+        }
+
+        .status-dot.error {
+            background: var(--status-error);
+            box-shadow: 0 0 12px rgba(255, 69, 58, 0.42);
         }
 
         #youtube-player {
             position: absolute;
-            left: -9999px;
             width: 1px;
             height: 1px;
+            left: -9999px;
             visibility: hidden;
         }
 
         @media (max-width: 480px) {
-            .container {
-                padding: 20px;
-                margin: 10px;
+            body {
+                padding: 22px 14px;
             }
 
-            .main-controls {
-                gap: 20px;
+            .container {
+                padding: 26px 22px;
+            }
+
+            .button-row {
+                grid-template-columns: 1fr;
+            }
+
+            .theme-toggle {
+                width: 100%;
+                justify-content: space-between;
+            }
+
+            .mac-terminal-body {
+                font-size: 0.8rem;
             }
         }
     </style>
@@ -396,38 +598,39 @@
             <div class="subtitle">YouTube Music Player</div>
         </div>
 
+        <div class="theme-toggle" role="group" aria-label="Pengaturan tema">
+            <button type="button" data-theme="light">☀️ Light</button>
+            <button type="button" data-theme="dark">🌙 Dark</button>
+            <button type="button" data-theme="auto" class="active">🖥 Auto</button>
+        </div>
+
         <div class="input-section">
-            <input 
-                type="text" 
-                id="yt-url" 
+            <input
+                type="text"
+                id="yt-url"
                 class="url-input"
-                placeholder="Paste YouTube link here..."
+                placeholder="Tempel tautan YouTube di sini..."
+                autocomplete="off"
             >
         </div>
 
         <div class="error" id="error-message"></div>
 
         <div class="button-row">
-            <button class="btn btn-primary" onclick="loadAudio()">
-                ▶ Play
-            </button>
-            <button class="btn btn-primary" onclick="pasteAndPlay()">
-                ⎘ Paste & Play
-            </button>
-            <button class="btn btn-secondary" onclick="clearAll()">
-                🗑 Clear
-            </button>
+            <button class="btn btn-primary" id="play-btn">▶ Putar</button>
+            <button class="btn btn-primary" id="paste-play-btn">⎘ Paste &amp; Play</button>
+            <button class="btn btn-secondary" id="clear-btn">🗑 Bersihkan</button>
         </div>
 
         <div class="loading" id="loading">
             <div class="spinner"></div>
-            <p>Loading audio...</p>
+            <p>Menghubungkan audio…</p>
         </div>
 
         <div class="player-card" id="player-card">
             <div class="song-info">
-                <div class="song-title" id="song-title">Song Title</div>
-                <div class="song-status" id="song-status">Ready to play</div>
+                <div class="song-title" id="song-title">AudioTube Player</div>
+                <div class="song-status" id="song-status">Siap diputar</div>
             </div>
 
             <div class="progress-section">
@@ -442,166 +645,420 @@
             </div>
 
             <div class="main-controls">
-                <button class="control-btn" onclick="seekBackward()">⏪</button>
-                <button class="control-btn play-btn" onclick="togglePlayPause()" id="play-pause-btn">⏸</button>
-                <button class="control-btn" onclick="seekForward()">⏩</button>
+                <button class="control-btn" id="backward-btn" aria-label="Mundur 10 detik">⏪</button>
+                <button class="control-btn play-btn" id="play-pause-btn" aria-label="Putar / Jeda">⏸</button>
+                <button class="control-btn" id="forward-btn" aria-label="Maju 10 detik">⏩</button>
             </div>
 
             <div class="secondary-controls">
                 <div class="volume-control">
                     <span class="volume-icon">🔊</span>
-                    <input 
-                        type="range" 
-                        class="volume-slider" 
-                        id="volume-slider" 
-                        min="0" 
-                        max="100" 
-                        value="50" 
-                        onchange="setVolume(this.value)"
+                    <input
+                        type="range"
+                        class="volume-slider"
+                        id="volume-slider"
+                        min="0"
+                        max="100"
+                        value="50"
+                        aria-label="Volume"
                     >
                 </div>
-                <button class="loop-toggle" onclick="toggleLoop()" id="loop-btn">
-                    🔁 Loop
-                </button>
+                <button class="loop-toggle" id="loop-btn">🔁 Loop</button>
             </div>
         </div>
 
-        <div class="features-grid">
-            <div class="feature-item">
-                <div class="feature-icon">🎧</div>
-                <div class="feature-text">Audio Only</div>
+        <div class="mac-terminal" aria-live="polite">
+            <div class="mac-terminal-header">
+                <span class="traffic-light traffic-red"></span>
+                <span class="traffic-light traffic-yellow"></span>
+                <span class="traffic-light traffic-green"></span>
+                <span class="mac-terminal-title">Stream Monitor</span>
             </div>
-            <div class="feature-item">
-                <div class="feature-icon">📱</div>
-                <div class="feature-text">iOS Style</div>
-            </div>
-            <div class="feature-item">
-                <div class="feature-icon">🔁</div>
-                <div class="feature-text">Loop Mode</div>
-            </div>
-            <div class="feature-item">
-                <div class="feature-icon">⏯</div>
-                <div class="feature-text">Full Control</div>
+            <div class="mac-terminal-body">
+                <div class="terminal-line"><span class="prompt">origin%</span><span id="terminal-origin">menunggu…</span></div>
+                <div class="terminal-line"><span class="prompt">iframe%</span><span id="terminal-iframe">belum tersedia</span></div>
+                <div class="terminal-divider"></div>
+                <div class="terminal-line status-row">
+                    <span class="status-dot loading" id="terminal-status-dot"></span>
+                    <span id="terminal-status-text">Idle • siap menerima perintah</span>
+                </div>
+                <div class="terminal-line">🎧 Audio only mode disiapkan</div>
+                <div class="terminal-line">📱 Desain touch-first ala macOS &amp; iOS</div>
+                <div class="terminal-line">🔁 Loop &amp; background playback siap</div>
+                <div class="terminal-line">⏯ Slider dan kontrol bisa digeser &amp; disentuh</div>
             </div>
         </div>
-
-        <div id="youtube-player"></div>
     </div>
 
-    <div id="debug-overlay" class="debug-overlay" style="display:none">
-        <div><strong>origin:</strong> <span id="dbg-origin"></span></div>
-        <div><strong>iframe src:</strong> <span id="dbg-iframe"></span></div>
-    </div>
+    <div id="youtube-player"></div>
 
     <script src="https://www.youtube.com/iframe_api"></script>
     <script>
         let player;
-    let isPlaying = false;
+        let isPlaying = false;
         let isLooping = false;
         let duration = 0;
         let isDragging = false;
         let updateInterval;
-    let pendingPlay = false; // flag set when user requested play before player ready
+        let pendingPlay = false;
+        let themePreference = 'auto';
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)');
 
-        // Optional: set this to a specific origin string (e.g. 'https://yourdomain.com')
-        // if you always host under a fixed domain. Leave null to use window.location.origin.
-        const allowedOrigin = null; // e.g. 'https://yourmusics.netlify.app'
+        const allowedOrigin = null;
+        const themeStorageKey = 'audiotube-theme-preference';
 
-        function updateDebugOverlay(show) {
-            const overlay = document.getElementById('debug-overlay');
-            if (!overlay) return;
-            const originSpan = document.getElementById('dbg-origin');
-            const iframeSpan = document.getElementById('dbg-iframe');
+        const terminalOrigin = document.getElementById('terminal-origin');
+        const terminalIframe = document.getElementById('terminal-iframe');
+        const terminalStatusDot = document.getElementById('terminal-status-dot');
+        const terminalStatusText = document.getElementById('terminal-status-text');
+
+        const terminalStates = {
+            idle: { className: 'loading', message: 'Idle • siap menerima perintah' },
+            loading: { className: 'loading', message: 'Menghubungkan ke stream audio…' },
+            playing: { className: 'playing', message: 'Streaming stabil • kualitas ringan' },
+            paused: { className: 'paused', message: 'Dijeda — tekan ▶ untuk lanjut' },
+            buffering: { className: 'loading', message: 'Buffering… mengoptimalkan koneksi' },
+            error: { className: 'error', message: 'Terjadi gangguan koneksi stream' }
+        };
+
+        function updateTerminalInfo() {
             const originToShow = (allowedOrigin && allowedOrigin.length) ? allowedOrigin : window.location.origin;
-            originSpan.textContent = originToShow;
+            terminalOrigin.textContent = originToShow || 'local-preview';
+
             if (player && player.getIframe) {
                 try {
                     const iframe = player.getIframe();
-                    iframeSpan.textContent = iframe ? iframe.src : '(not available)';
-                } catch (e) {
-                    iframeSpan.textContent = '(error reading iframe)';
+                    terminalIframe.textContent = iframe ? iframe.src : 'iframe belum siap';
+                } catch (err) {
+                    terminalIframe.textContent = 'gagal membaca iframe';
                 }
             } else {
-                iframeSpan.textContent = '(none)';
+                terminalIframe.textContent = 'iframe belum tersedia';
             }
-            overlay.style.display = show ? 'block' : 'none';
         }
 
-        // Extract YouTube video ID from URL
-        function extractVideoID(url) {
-            const patterns = [
-                /(?:youtube\.com.*(?:\?|&)v=|youtu\.be\/)([A-Za-z0-9_\-]{11})/,
-                /youtube\.com.*[?&]v=([A-Za-z0-9_\-]{11})/,
-                /youtu\.be\/([A-Za-z0-9_\-]{11})/,
-                /youtube\.com\/embed\/([A-Za-z0-9_\-]{11})/
-            ];
+        function setTerminalState(stateKey, customMessage) {
+            const state = terminalStates[stateKey] || terminalStates.idle;
+            terminalStatusDot.className = `status-dot ${state.className}`;
+            terminalStatusText.textContent = customMessage || state.message;
+        }
 
-            for (let pattern of patterns) {
-                const match = url.match(pattern);
-                if (match) return match[1];
+        function showLoading(show) {
+            const loading = document.getElementById('loading');
+            loading.style.display = show ? 'block' : 'none';
+            if (show) {
+                setTerminalState('loading');
+            } else if (!isPlaying) {
+                setTerminalState('idle');
+            }
+        }
+
+        function showError(message) {
+            const errorBox = document.getElementById('error-message');
+            errorBox.textContent = message;
+            errorBox.style.display = 'block';
+            setTerminalState('error', message);
+        }
+
+        function clearError() {
+            const errorBox = document.getElementById('error-message');
+            errorBox.textContent = '';
+            errorBox.style.display = 'none';
+        }
+
+        function formatTime(seconds) {
+            seconds = Math.max(seconds, 0);
+            const minutes = Math.floor(seconds / 60);
+            const secs = Math.floor(seconds % 60);
+            return `${minutes}:${secs.toString().padStart(2, '0')}`;
+        }
+
+        function updatePlayPauseButton() {
+            const btn = document.getElementById('play-pause-btn');
+            btn.textContent = isPlaying ? '⏸' : '▶';
+        }
+
+        function renderProgress(percent) {
+            const clamped = Math.max(0, Math.min(100, percent));
+            document.getElementById('progress-bar').style.width = clamped + '%';
+            document.getElementById('progress-thumb').style.left = clamped + '%';
+        }
+
+        function updateProgress() {
+            if (!player || !duration || isDragging) return;
+            const currentTime = player.getCurrentTime();
+            const percent = (currentTime / duration) * 100;
+            renderProgress(percent);
+            document.getElementById('current-time').textContent = formatTime(currentTime);
+        }
+
+        function extractVideoID(url) {
+            if (!url) return null;
+            const regex = /(?:youtube\.com\/(?:shorts\/|watch\?v=|embed\/)|youtu\.be\/)([\w-]{11})/;
+            const match = url.match(regex);
+            if (match && match[1]) {
+                return match[1];
+            }
+            try {
+                const parsed = new URL(url);
+                if (parsed.hostname.includes('youtube.com')) {
+                    return parsed.searchParams.get('v');
+                }
+            } catch (err) {
+                return null;
             }
             return null;
         }
 
-        // Format time in MM:SS
-        function formatTime(seconds) {
-            const mins = Math.floor(seconds / 60);
-            const secs = Math.floor(seconds % 60);
-            return `${mins}:${secs.toString().padStart(2, '0')}`;
+        function ensureIframePermissions() {
+            if (!player || !player.getIframe) return;
+            try {
+                const iframe = player.getIframe();
+                if (iframe) {
+                    iframe.setAttribute('allow', 'autoplay; encrypted-media; picture-in-picture');
+                    iframe.setAttribute('playsinline', '1');
+                }
+            } catch (err) {
+                console.warn('Tidak dapat mengatur atribut iframe:', err);
+            }
         }
 
-        // Show error message
-        function showError(message) {
-            const errorDiv = document.getElementById('error-message');
-            errorDiv.textContent = message;
-            errorDiv.style.display = 'block';
-            setTimeout(() => {
-                errorDiv.style.display = 'none';
-            }, 5000);
+        function applyMobileOptimizations() {
+            if (!player || typeof player.setPlaybackQuality !== 'function') return;
+            try {
+                player.setPlaybackQuality('small');
+                setTimeout(() => {
+                    if (player && typeof player.setPlaybackQuality === 'function') {
+                        player.setPlaybackQuality('tiny');
+                    }
+                }, 1500);
+            } catch (err) {
+                console.warn('Gagal mengatur kualitas playback:', err);
+            }
         }
 
-        // Show loading
-        function showLoading(show) {
-            document.getElementById('loading').style.display = show ? 'block' : 'none';
+        function updateMediaSession(title) {
+            if ('mediaSession' in navigator) {
+                try {
+                    navigator.mediaSession.metadata = new MediaMetadata({
+                        title: title || 'AudioTube Stream',
+                        artist: 'YouTube Audio',
+                        album: 'AudioTube',
+                        artwork: [
+                            { src: 'https://www.youtube.com/s/desktop/8e90062a/img/favicon_144.png', sizes: '144x144', type: 'image/png' }
+                        ]
+                    });
+
+                    navigator.mediaSession.setActionHandler('play', () => {
+                        if (!isPlaying) {
+                            togglePlayPause();
+                        }
+                    });
+                    navigator.mediaSession.setActionHandler('pause', () => {
+                        if (isPlaying) {
+                            togglePlayPause();
+                        }
+                    });
+                    navigator.mediaSession.setActionHandler('seekforward', () => seekForward());
+                    navigator.mediaSession.setActionHandler('seekbackward', () => seekBackward());
+                } catch (err) {
+                    console.warn('MediaSession tidak tersedia sepenuhnya:', err);
+                }
+            }
         }
 
-        // Update progress bar
-        function updateProgress() {
-            if (!player || !duration || isDragging) return;
-
-            const currentTime = player.getCurrentTime();
-            const progressPercent = (currentTime / duration) * 100;
-
-            document.getElementById('progress-bar').style.width = progressPercent + '%';
-            document.getElementById('progress-thumb').style.left = progressPercent + '%';
-            document.getElementById('current-time').textContent = formatTime(currentTime);
+        function updateMediaSessionState() {
+            if ('mediaSession' in navigator) {
+                navigator.mediaSession.playbackState = isPlaying ? 'playing' : 'paused';
+            }
         }
 
-        // Load and play audio
+        function safePlay(options = {}) {
+            if (!player || typeof player.playVideo !== 'function') return;
+
+            const {
+                terminalMessage,
+                songStatus,
+                showBlockNotice = true,
+                notifyOnBlock = false
+            } = options;
+
+            try {
+                const playResult = player.playVideo();
+                if (playResult && typeof playResult.then === 'function') {
+                    playResult.then(() => {
+                        isPlaying = true;
+                        pendingPlay = false;
+                        document.getElementById('song-status').textContent = songStatus || 'Sedang diputar…';
+                        updatePlayPauseButton();
+                        setTerminalState('playing', terminalMessage || terminalStates.playing.message);
+                        updateMediaSessionState();
+                    }).catch(err => {
+                        console.warn('Playback diblokir:', err);
+                        isPlaying = false;
+                        pendingPlay = true;
+                        updatePlayPauseButton();
+                        if (showBlockNotice) {
+                            setTerminalState('paused', 'Sentuh ▶ untuk mulai memutar audio');
+                            document.getElementById('song-status').textContent = 'Tap ▶ untuk memulai audio';
+                        }
+                        if (notifyOnBlock) {
+                            showError('Browser memblokir autoplay. Tap ▶ untuk mulai.');
+                        }
+                        updateMediaSessionState();
+                    });
+                } else {
+                    isPlaying = true;
+                    pendingPlay = false;
+                    document.getElementById('song-status').textContent = songStatus || 'Sedang diputar…';
+                    updatePlayPauseButton();
+                    setTerminalState('playing', terminalMessage || terminalStates.playing.message);
+                    updateMediaSessionState();
+                }
+            } catch (err) {
+                console.error('safePlay error:', err);
+                isPlaying = false;
+                pendingPlay = true;
+                updatePlayPauseButton();
+                if (showBlockNotice) {
+                    setTerminalState('error', 'Tidak bisa memulai pemutaran. Coba lagi.');
+                }
+                if (notifyOnBlock) {
+                    showError('Gagal memulai audio. Silakan coba lagi.');
+                }
+            }
+        }
+
+        function togglePlayPause() {
+            if (!player) return;
+            clearError();
+            if (isPlaying) {
+                player.pauseVideo();
+                pendingPlay = false;
+            } else {
+                pendingPlay = true;
+                safePlay({ terminalMessage: 'Melanjutkan pemutaran…' });
+            }
+        }
+
+        function seekBackward() {
+            if (!player) return;
+            const newTime = Math.max(0, player.getCurrentTime() - 10);
+            player.seekTo(newTime, true);
+            document.getElementById('current-time').textContent = formatTime(newTime);
+        }
+
+        function seekForward() {
+            if (!player) return;
+            const newTime = Math.min(duration || 0, player.getCurrentTime() + 10);
+            player.seekTo(newTime, true);
+            document.getElementById('current-time').textContent = formatTime(newTime);
+        }
+
+        function setVolume(volume) {
+            const vol = Math.max(0, Math.min(100, Number(volume)));
+            if (player && typeof player.setVolume === 'function') {
+                player.setVolume(vol);
+            }
+        }
+
+        function toggleLoop() {
+            isLooping = !isLooping;
+            const btn = document.getElementById('loop-btn');
+            if (isLooping) {
+                btn.classList.add('active');
+                btn.textContent = '🔁 Loop On';
+                setTerminalState('playing', 'Loop aktif — lagu akan terus diputar');
+            } else {
+                btn.classList.remove('active');
+                btn.textContent = '🔁 Loop';
+                setTerminalState(isPlaying ? 'playing' : 'idle');
+            }
+        }
+
+        function pasteAndPlay() {
+            const input = document.getElementById('yt-url');
+            if (!navigator.clipboard || !navigator.clipboard.readText) {
+                showError('Clipboard API tidak tersedia. Tempel secara manual.');
+                input.focus();
+                return;
+            }
+            navigator.clipboard.readText().then(text => {
+                if (!text || !text.trim()) {
+                    showError('Clipboard kosong.');
+                    input.focus();
+                    return;
+                }
+                input.value = text.trim();
+                pendingPlay = true;
+                loadAudio();
+            }).catch(err => {
+                console.warn('Clipboard read failed:', err);
+                showError('Tidak dapat membaca clipboard. Tempel secara manual.');
+                input.focus();
+            });
+        }
+
+        function clearAll() {
+            const input = document.getElementById('yt-url');
+            input.value = '';
+            input.focus();
+
+            if (player) {
+                player.destroy();
+                player = null;
+            }
+            if (updateInterval) {
+                clearInterval(updateInterval);
+                updateInterval = null;
+            }
+
+            isPlaying = false;
+            isLooping = false;
+            pendingPlay = false;
+            duration = 0;
+
+            document.getElementById('player-card').style.display = 'none';
+            document.getElementById('loop-btn').classList.remove('active');
+            document.getElementById('loop-btn').textContent = '🔁 Loop';
+            document.getElementById('song-status').textContent = 'Siap diputar';
+            document.getElementById('song-title').textContent = 'AudioTube Player';
+            document.getElementById('current-time').textContent = '0:00';
+            document.getElementById('total-time').textContent = '0:00';
+            renderProgress(0);
+            updatePlayPauseButton();
+            clearError();
+            setTerminalState('idle');
+            updateMediaSessionState();
+        }
+
         function loadAudio() {
+            clearError();
             const url = document.getElementById('yt-url').value.trim();
 
             if (!url) {
-                showError('Please enter a YouTube link first!');
+                showError('Silakan masukkan tautan YouTube terlebih dahulu.');
                 return;
             }
 
             const videoId = extractVideoID(url);
             if (!videoId) {
-                showError('Invalid YouTube link! Please check the format.');
+                showError('Tautan YouTube tidak valid. Periksa kembali formatnya.');
                 return;
             }
 
             showLoading(true);
+            setTerminalState('loading', 'Menginisialisasi player…');
 
-            // Destroy existing player
             if (player) {
                 player.destroy();
-                clearInterval(updateInterval);
+                player = null;
+                if (updateInterval) {
+                    clearInterval(updateInterval);
+                    updateInterval = null;
+                }
             }
 
-            // Create new player
-            // mark that user requested playback (gesture)
             pendingPlay = true;
 
             player = new YT.Player('youtube-player', {
@@ -609,18 +1066,15 @@
                 width: '1',
                 videoId: videoId,
                 playerVars: {
-                    // do not rely on autoplay on mobile — initiate play from user gesture
-                    autoplay: 0,
+                    autoplay: 1,
                     playsinline: 1,
-                        // ensure origin matches the page origin to avoid postMessage mismatches
-                        origin: (allowedOrigin && allowedOrigin.length) ? allowedOrigin : window.location.origin,
                     controls: 0,
                     disablekb: 1,
                     fs: 0,
-                    iv_load_policy: 3,
-                    modestbranding: 1,
                     rel: 0,
-                    showinfo: 0
+                    modestbranding: 1,
+                    iv_load_policy: 3,
+                    origin: (allowedOrigin && allowedOrigin.length) ? allowedOrigin : window.location.origin
                 },
                 events: {
                     'onReady': onPlayerReady,
@@ -628,296 +1082,328 @@
                     'onError': onPlayerError
                 }
             });
-            // show debug overlay after creating player
-            updateDebugOverlay(true);
+
+            setTimeout(ensureIframePermissions, 600);
+            updateTerminalInfo();
         }
 
-        // Player ready event
-        function onPlayerReady(event) {
+        function onPlayerReady() {
             showLoading(false);
-            const title = player.getVideoData().title || 'YouTube Audio';
+            ensureIframePermissions();
+            applyMobileOptimizations();
+
             duration = player.getDuration();
+            const title = player.getVideoData().title || 'YouTube Audio';
 
             document.getElementById('song-title').textContent = title;
             document.getElementById('total-time').textContent = formatTime(duration);
+            document.getElementById('song-status').textContent = 'Menyiapkan pemutaran…';
             document.getElementById('player-card').style.display = 'block';
-            document.getElementById('song-status').textContent = 'Now playing...';
 
-            // Set initial volume
-            player.setVolume(50);
-            // try to play only if user requested play (gesture)
-            if (pendingPlay) {
-                // Some mobile browsers block play() unless it's in direct user gesture;
-                // attempt play and handle the returned promise.
-                const playResult = player.playVideo && player.playVideo();
-                if (playResult && typeof playResult.then === 'function') {
-                    playResult.then(() => {
-                        isPlaying = true;
-                        updatePlayPauseButton();
-                    }).catch((err) => {
-                        // Playback blocked — inform user to tap the play button
-                        isPlaying = false;
-                        updatePlayPauseButton();
-                        showError('Playback blocked by browser. Tap the Play button to start.');
-                    });
-                } else {
-                    // Older API or no promise — assume playing
-                    isPlaying = true;
-                    updatePlayPauseButton();
-                }
-                pendingPlay = false;
-            } else {
-                isPlaying = false;
-                updatePlayPauseButton();
+            setVolume(document.getElementById('volume-slider').value);
+            updateMediaSession(title);
+            updateMediaSessionState();
+
+            if (updateInterval) {
+                clearInterval(updateInterval);
             }
-
-            // Start progress updates
             updateInterval = setInterval(updateProgress, 500);
+
+            safePlay({
+                terminalMessage: 'Streaming dimulai • mode ringan aktif',
+                songStatus: 'Sedang diputar…',
+                notifyOnBlock: true
+            });
+            updateTerminalInfo();
         }
 
-        // Player state change event
         function onPlayerStateChange(event) {
             const status = document.getElementById('song-status');
 
-            switch(event.data) {
+            switch (event.data) {
                 case YT.PlayerState.PLAYING:
-                    status.textContent = 'Now playing...';
+                    status.textContent = 'Sedang diputar…';
                     isPlaying = true;
+                    pendingPlay = false;
+                    setTerminalState('playing', 'Streaming stabil • kualitas ringan');
+                    updateMediaSessionState();
                     break;
                 case YT.PlayerState.PAUSED:
-                    status.textContent = 'Paused';
+                    status.textContent = 'Dijeda';
                     isPlaying = false;
+                    pendingPlay = false;
+                    setTerminalState('paused');
+                    updateMediaSessionState();
+                    break;
+                case YT.PlayerState.BUFFERING:
+                    status.textContent = 'Buffering…';
+                    pendingPlay = true;
+                    setTerminalState('buffering');
+                    applyMobileOptimizations();
                     break;
                 case YT.PlayerState.ENDED:
                     if (isLooping) {
-                        player.seekTo(0);
-                        player.playVideo();
-                        status.textContent = 'Looping...';
+                        player.seekTo(0, true);
+                        pendingPlay = true;
+                        safePlay({ terminalMessage: 'Loop aktif', showBlockNotice: false });
+                        status.textContent = 'Looping…';
                     } else {
-                        status.textContent = 'Finished';
+                        status.textContent = 'Pemutaran selesai';
                         isPlaying = false;
+                        pendingPlay = false;
+                        setTerminalState('paused', 'Pemutaran selesai');
+                        updateMediaSessionState();
                     }
                     break;
-                case YT.PlayerState.BUFFERING:
-                    status.textContent = 'Buffering...';
+                case YT.PlayerState.CUED:
+                    status.textContent = 'Siap diputar';
+                    isPlaying = false;
+                    setTerminalState('idle');
                     break;
             }
             updatePlayPauseButton();
         }
 
-        // Player error event
         function onPlayerError(event) {
             showLoading(false);
-            let errorMessage = 'An error occurred while loading the video. ';
+            isPlaying = false;
+            pendingPlay = false;
+            updatePlayPauseButton();
+            updateMediaSessionState();
 
-            switch(event.data) {
+            let errorMessage = 'Terjadi kesalahan saat memuat audio. ';
+            switch (event.data) {
                 case 2:
-                    errorMessage += 'Invalid video ID.';
+                    errorMessage += 'ID video tidak valid.';
                     break;
                 case 5:
-                    errorMessage += 'Video cannot be played in HTML5 player.';
+                    errorMessage += 'Video tidak bisa diputar di HTML5 player.';
                     break;
                 case 100:
-                    errorMessage += 'Video not found or has been removed.';
+                    errorMessage += 'Video tidak ditemukan atau sudah dihapus.';
                     break;
                 case 101:
                 case 150:
-                    errorMessage += 'Video cannot be played due to owner restrictions.';
+                    errorMessage += 'Pemilik video membatasi pemutaran.';
                     break;
                 default:
-                    errorMessage += 'Please try again.';
+                    errorMessage += 'Silakan coba lagi.';
             }
-
             showError(errorMessage);
         }
 
-        // Toggle play/pause
-        function togglePlayPause() {
-            if (!player) return;
-
-            if (isPlaying) {
-                player.pauseVideo();
-            } else {
-                // attempt to play and catch potential promise rejection on mobile
-                const playResult = player.playVideo && player.playVideo();
-                if (playResult && typeof playResult.then === 'function') {
-                    playResult.then(() => {
-                        isPlaying = true;
-                        updatePlayPauseButton();
-                    }).catch(() => {
-                        showError('Browser blocked autoplay. Tap the player area or Play button again.');
-                    });
-                } else {
-                    // assume it started
-                    isPlaying = true;
-                    updatePlayPauseButton();
-                }
-            }
-        }
-
-        // Update play/pause button
-        function updatePlayPauseButton() {
-            const btn = document.getElementById('play-pause-btn');
-            btn.textContent = isPlaying ? '⏸' : '▶';
-        }
-
-        // Seek backward (10 seconds)
-        function seekBackward() {
-            if (!player) return;
-            const currentTime = player.getCurrentTime();
-            player.seekTo(Math.max(0, currentTime - 10));
-        }
-
-        // Seek forward (10 seconds)
-        function seekForward() {
-            if (!player) return;
-            const currentTime = player.getCurrentTime();
-            player.seekTo(Math.min(duration, currentTime + 10));
-        }
-
-        // Set volume
-        function setVolume(volume) {
-            if (player) {
-                player.setVolume(volume);
-            }
-        }
-
-        // Toggle loop mode
-        function toggleLoop() {
-            isLooping = !isLooping;
-            const btn = document.getElementById('loop-btn');
-            if (isLooping) {
-                btn.classList.add('active');
-                btn.textContent = '🔁 On';
-            } else {
-                btn.classList.remove('active');
-                btn.textContent = '🔁 Loop';
-            }
-        }
-
-        // Clear all
-        function clearAll() {
-            const input = document.getElementById('yt-url');
-            const val = input.value.trim();
-
-            if (val.length > 0) {
-                // If there's text, clear it and reset player
-                input.value = '';
-                document.getElementById('player-card').style.display = 'none';
-
-                if (player) {
-                    player.destroy();
-                    player = null;
-                    clearInterval(updateInterval);
-                }
-
-                isPlaying = false;
-                isLooping = false;
-                duration = 0;
-                document.getElementById('loop-btn').classList.remove('active');
-                document.getElementById('loop-btn').textContent = '🔁 Loop';
-            } else {
-                // If input is already empty, show instruction text
-                input.value = 'paste saja';
-                // keep focus so user can paste immediately
-                input.focus();
-                // place caret at end
-                input.setSelectionRange(input.value.length, input.value.length);
-            }
-        }
-
-        // Progress bar click/drag functionality
         function initProgressBar() {
             const container = document.getElementById('progress-container');
             const thumb = document.getElementById('progress-thumb');
+            let activePointerId = null;
 
-            function getProgressFromEvent(e) {
+            function getClientX(event) {
+                if (event.touches && event.touches.length) return event.touches[0].clientX;
+                if (event.changedTouches && event.changedTouches.length) return event.changedTouches[0].clientX;
+                return event.clientX;
+            }
+
+            function getPercentFromClientX(clientX) {
                 const rect = container.getBoundingClientRect();
-                const x = e.clientX - rect.left;
+                const x = clientX - rect.left;
                 return Math.max(0, Math.min(100, (x / rect.width) * 100));
             }
 
-            function seekToProgress(percent) {
-                if (player && duration) {
-                    const seekTime = (percent / 100) * duration;
-                    player.seekTo(seekTime);
-                }
-            }
-
-            // Click to seek
-            container.addEventListener('click', function(e) {
-                if (e.target === thumb) return;
-                const percent = getProgressFromEvent(e);
-                seekToProgress(percent);
-            });
-
-            // Drag functionality
-            thumb.addEventListener('mousedown', function(e) {
-                isDragging = true;
-                e.preventDefault();
-            });
-
-            document.addEventListener('mousemove', function(e) {
-                if (!isDragging) return;
-                const percent = getProgressFromEvent(e);
-                document.getElementById('progress-bar').style.width = percent + '%';
-                document.getElementById('progress-thumb').style.left = percent + '%';
-
+            function updateDuringDrag(percent) {
+                renderProgress(percent);
                 if (duration) {
                     document.getElementById('current-time').textContent = formatTime((percent / 100) * duration);
                 }
-            });
+            }
 
-            document.addEventListener('mouseup', function(e) {
-                if (!isDragging) return;
-                isDragging = false;
-                const percent = getProgressFromEvent(e);
-                seekToProgress(percent);
+            function commitSeek(percent) {
+                if (player && duration) {
+                    player.seekTo((percent / 100) * duration, true);
+                }
+            }
+
+            if (window.PointerEvent) {
+                thumb.addEventListener('pointerdown', e => {
+                    activePointerId = e.pointerId;
+                    isDragging = true;
+                    updateDuringDrag(getPercentFromClientX(getClientX(e)));
+                    e.preventDefault();
+                });
+
+                container.addEventListener('pointerdown', e => {
+                    if (e.target === thumb) return;
+                    activePointerId = e.pointerId;
+                    const percent = getPercentFromClientX(getClientX(e));
+                    updateDuringDrag(percent);
+                    commitSeek(percent);
+                    isDragging = true;
+                    e.preventDefault();
+                });
+
+                window.addEventListener('pointermove', e => {
+                    if (!isDragging || (activePointerId !== null && e.pointerId !== activePointerId)) return;
+                    updateDuringDrag(getPercentFromClientX(getClientX(e)));
+                });
+
+                const finishPointer = e => {
+                    if (!isDragging || (activePointerId !== null && e.pointerId !== activePointerId)) return;
+                    const percent = getPercentFromClientX(getClientX(e));
+                    updateDuringDrag(percent);
+                    commitSeek(percent);
+                    isDragging = false;
+                    activePointerId = null;
+                };
+
+                window.addEventListener('pointerup', finishPointer);
+                window.addEventListener('pointercancel', finishPointer);
+            } else {
+                thumb.addEventListener('touchstart', e => {
+                    isDragging = true;
+                    updateDuringDrag(getPercentFromClientX(getClientX(e)));
+                    e.preventDefault();
+                }, { passive: false });
+
+                thumb.addEventListener('touchmove', e => {
+                    if (!isDragging) return;
+                    updateDuringDrag(getPercentFromClientX(getClientX(e)));
+                    e.preventDefault();
+                }, { passive: false });
+
+                thumb.addEventListener('touchend', e => {
+                    if (!isDragging) return;
+                    const percent = getPercentFromClientX(getClientX(e));
+                    updateDuringDrag(percent);
+                    commitSeek(percent);
+                    isDragging = false;
+                });
+
+                container.addEventListener('touchstart', e => {
+                    if (e.target === thumb) return;
+                    const percent = getPercentFromClientX(getClientX(e));
+                    updateDuringDrag(percent);
+                    commitSeek(percent);
+                }, { passive: true });
+
+                thumb.addEventListener('mousedown', e => {
+                    isDragging = true;
+                    updateDuringDrag(getPercentFromClientX(getClientX(e)));
+                    e.preventDefault();
+                });
+
+                window.addEventListener('mousemove', e => {
+                    if (!isDragging) return;
+                    updateDuringDrag(getPercentFromClientX(getClientX(e)));
+                });
+
+                window.addEventListener('mouseup', e => {
+                    if (!isDragging) return;
+                    const percent = getPercentFromClientX(getClientX(e));
+                    updateDuringDrag(percent);
+                    commitSeek(percent);
+                    isDragging = false;
+                });
+            }
+        }
+
+        function handleResumeGesture() {
+            if (pendingPlay && player && !isPlaying) {
+                safePlay({ terminalMessage: 'Melanjutkan setelah interaksi pengguna', showBlockNotice: false });
+            }
+        }
+
+        function handleVisibilityChange() {
+            if (!player) return;
+            if (document.visibilityState === 'visible') {
+                if (pendingPlay) {
+                    safePlay({ terminalMessage: 'Melanjutkan setelah kembali', showBlockNotice: false });
+                } else if (isPlaying) {
+                    safePlay({ terminalMessage: 'Menjaga playback tetap hidup', showBlockNotice: false });
+                }
+            } else if (document.visibilityState === 'hidden' && isPlaying) {
+                safePlay({ terminalMessage: 'Menjaga playback di latar belakang', showBlockNotice: false });
+            }
+        }
+
+        function applyTheme(preference, { save = true } = {}) {
+            themePreference = preference;
+            if (save) {
+                try {
+                    localStorage.setItem(themeStorageKey, preference);
+                } catch (err) {
+                    console.warn('Tidak bisa menyimpan preferensi tema:', err);
+                }
+            }
+            const resolved = preference === 'auto' ? (prefersDark.matches ? 'dark' : 'light') : preference;
+            document.body.setAttribute('data-theme', resolved);
+            document.querySelectorAll('.theme-toggle button').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.theme === preference);
             });
         }
 
-        // Enter key support
-        document.getElementById('yt-url').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                loadAudio();
+        function initTheme() {
+            let stored;
+            try {
+                stored = localStorage.getItem(themeStorageKey);
+            } catch (err) {
+                stored = null;
+            }
+            if (stored && ['light', 'dark', 'auto'].includes(stored)) {
+                applyTheme(stored, { save: false });
+            } else {
+                applyTheme('auto', { save: false });
+            }
+        }
+
+        function onYouTubeIframeAPIReady() {
+            console.log('YouTube API siap digunakan');
+        }
+
+        window.addEventListener('load', () => {
+            initTheme();
+            updateTerminalInfo();
+            initProgressBar();
+            setTerminalState('idle');
+
+            document.getElementById('yt-url').focus();
+            document.getElementById('play-btn').addEventListener('click', loadAudio);
+            document.getElementById('paste-play-btn').addEventListener('click', pasteAndPlay);
+            document.getElementById('clear-btn').addEventListener('click', clearAll);
+            document.getElementById('yt-url').addEventListener('keypress', e => {
+                if (e.key === 'Enter') {
+                    loadAudio();
+                }
+            });
+            document.getElementById('volume-slider').addEventListener('input', e => setVolume(e.target.value));
+            document.getElementById('loop-btn').addEventListener('click', toggleLoop);
+            document.getElementById('backward-btn').addEventListener('click', seekBackward);
+            document.getElementById('forward-btn').addEventListener('click', seekForward);
+            document.getElementById('play-pause-btn').addEventListener('click', togglePlayPause);
+            document.querySelectorAll('.theme-toggle button').forEach(btn => {
+                btn.addEventListener('click', () => applyTheme(btn.dataset.theme));
+            });
+        });
+
+        setInterval(updateTerminalInfo, 2500);
+        window.addEventListener('resize', updateTerminalInfo);
+        prefersDark.addEventListener('change', () => {
+            if (themePreference === 'auto') {
+                applyTheme('auto', { save: false });
             }
         });
 
-        // Paste from clipboard and play (requires HTTPS + permission)
-        function pasteAndPlay() {
-            const input = document.getElementById('yt-url');
-            if (!navigator.clipboard || !navigator.clipboard.readText) {
-                showError('Clipboard API not available. Paste manually.');
-                input.focus();
-                return;
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+        window.addEventListener('pageshow', event => {
+            if (event.persisted && (isPlaying || pendingPlay) && player) {
+                safePlay({ terminalMessage: 'Melanjutkan setelah kembali', showBlockNotice: false });
             }
-            navigator.clipboard.readText().then(text => {
-                if (!text || !text.trim()) {
-                    showError('Clipboard is empty.');
-                    input.focus();
-                    return;
-                }
-                input.value = text.trim();
-                // user gesture already occurred by clicking Paste & Play, set pendingPlay
-                pendingPlay = true;
-                loadAudio();
-            }).catch(err => {
-                console.warn('Clipboard read failed:', err);
-                showError('Cannot read clipboard. Please paste manually.');
-                input.focus();
-            });
-        }
-
-        // YouTube API ready
-        function onYouTubeIframeAPIReady() {
-            console.log('YouTube API ready');
-        }
-
-        // Initialize on page load
-        window.onload = function() {
-            document.getElementById('yt-url').focus();
-            initProgressBar();
-        };
+        });
+        window.addEventListener('focus', () => {
+            if (isPlaying && player) {
+                safePlay({ terminalMessage: 'Menjaga playback aktif', showBlockNotice: false });
+            }
+        });
+        document.addEventListener('click', handleResumeGesture);
+        document.addEventListener('touchend', handleResumeGesture, { passive: true });
     </script>
 </body>
 </html>
