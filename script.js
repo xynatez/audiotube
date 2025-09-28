@@ -8,6 +8,7 @@ let pendingPlay = false;
 let themePreference = 'auto';
 let bufferingRetry;
 let awaitingUnmute = false;
+let hasStarted = false;
 const prefersDark = window.matchMedia('(prefers-color-scheme: dark)');
 const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 
@@ -136,12 +137,7 @@ function ensureIframePermissions() {
 function applyMobileOptimizations() {
     if (!player || typeof player.setPlaybackQuality !== 'function') return;
     try {
-        player.setPlaybackQuality('small');
-        setTimeout(() => {
-            if (player && typeof player.setPlaybackQuality === 'function') {
-                player.setPlaybackQuality('tiny');
-            }
-        }, 1200);
+        player.setPlaybackQuality('tiny');
     } catch (err) {
         console.warn('Failed to set playback quality:', err);
     }
@@ -192,12 +188,11 @@ function attemptUnmute() {
         setTerminalState('playing', 'Audio unmuted • streaming with sound');
     } catch (err) {
         console.warn('Unmute attempt failed:', err);
-        // Keep awaitingUnmute true to try again on next gesture
     }
 }
 
 function safePlay(options = {}) {
-    if (!player || typeof player.playVideo !== 'function') return;
+    if (!player) return;
 
     const {
         terminalMessage,
@@ -207,7 +202,16 @@ function safePlay(options = {}) {
     } = options;
 
     try {
-        const playResult = player.playVideo();
+        let playResult;
+        if (isMobile && !hasStarted) {
+            playResult = player.loadVideoById(videoId, 0, 'tiny');
+            hasStarted = true;
+        } else if (typeof player.playVideo === 'function') {
+            playResult = player.playVideo();
+        } else {
+            return;
+        }
+
         if (playResult && typeof playResult.then === 'function') {
             playResult.then(() => {
                 isPlaying = true;
@@ -216,9 +220,8 @@ function safePlay(options = {}) {
                 updatePlayPauseButton();
                 setTerminalState('playing', terminalMessage || terminalStates.playing.message);
                 updateMediaSessionState();
-                // Attempt unmute after successful play (but may still need gesture)
                 if (awaitingUnmute) {
-                    setTimeout(attemptUnmute, 100); // Slight delay to ensure play context
+                    setTimeout(attemptUnmute, 100);
                 }
             }).catch(err => {
                 console.warn('Playback blocked:', err);
@@ -352,6 +355,7 @@ function clearAll() {
     pendingPlay = false;
     duration = 0;
     awaitingUnmute = false;
+    hasStarted = false;
 
     document.getElementById('player-card').style.display = 'none';
     const loopBtn = document.getElementById('loop-btn');
@@ -370,6 +374,8 @@ function clearAll() {
     updateMediaSessionState();
 }
 
+let videoId; // Add this to store videoId globally
+
 function loadAudio() {
     clearError();
     const url = document.getElementById('yt-url').value.trim();
@@ -379,7 +385,7 @@ function loadAudio() {
         return;
     }
 
-    const videoId = extractVideoID(url);
+    videoId = extractVideoID(url);
     if (!videoId) {
         showError('That does not look like a valid YouTube link.');
         return;
@@ -403,13 +409,14 @@ function loadAudio() {
 
     pendingPlay = true;
     awaitingUnmute = isMobile;
+    hasStarted = false;
 
     player = new YT.Player('youtube-player', {
         height: '1',
         width: '1',
         videoId: videoId,
         playerVars: {
-            autoplay: isMobile ? 0 : 1, // Disable autoplay on mobile to avoid blocks
+            autoplay: isMobile ? 0 : 1,
             playsinline: 1,
             controls: 0,
             disablekb: 1,
@@ -444,7 +451,7 @@ function onPlayerReady() {
     document.getElementById('player-card').style.display = 'block';
 
     if (isMobile) {
-        player.mute(); // Mute initially on mobile
+        player.mute();
         setTerminalState('idle', 'Ready • tap Play to start with sound');
     }
 
@@ -464,7 +471,6 @@ function onPlayerReady() {
             notifyOnBlock: true
         });
     } else if (pendingPlay) {
-        // On mobile, wait for user gesture, show prompt
         pendingPlay = true;
         isPlaying = false;
         updatePlayPauseButton();
@@ -503,20 +509,18 @@ function onPlayerStateChange(event) {
             if (bufferingRetry) {
                 clearTimeout(bufferingRetry);
             }
-            if (isMobile) {
-                bufferingRetry = setTimeout(() => {
-                    if (!player) return;
-                    const state = player.getPlayerState();
-                    if (state === YT.PlayerState.BUFFERING) {
-                        try {
-                            player.setPlaybackQuality('tiny');
-                        } catch (err) {
-                            console.warn('Unable to downgrade quality:', err);
-                        }
-                        safePlay({ terminalMessage: 'Re-stabilizing mobile stream…', showBlockNotice: false });
+            bufferingRetry = setTimeout(() => {
+                if (!player) return;
+                const state = player.getPlayerState();
+                if (state === YT.PlayerState.BUFFERING) {
+                    try {
+                        player.setPlaybackQuality('tiny');
+                    } catch (err) {
+                        console.warn('Unable to downgrade quality:', err);
                     }
-                }, 1800);
-            }
+                    safePlay({ terminalMessage: 'Re-stabilizing stream…', showBlockNotice: false });
+                }
+            }, 3000); // Increased timeout to 3s
             break;
         case YT.PlayerState.ENDED:
             if (isLooping) {
@@ -685,7 +689,7 @@ function initProgressBar() {
 }
 
 function handleResumeGesture() {
-    attemptUnmute(); // Unmute on any user gesture
+    attemptUnmute();
     if (pendingPlay && player && !isPlaying) {
         safePlay({ terminalMessage: 'Resuming after user interaction', showBlockNotice: false });
     }
