@@ -1,3 +1,4 @@
+<DOCUMENT filename="script.js">
 let player;
 let isPlaying = false;
 let isLooping = false;
@@ -183,6 +184,19 @@ function updateMediaSessionState() {
     }
 }
 
+function attemptUnmute() {
+    if (!player || !awaitingUnmute) return;
+    try {
+        player.unMute();
+        awaitingUnmute = false;
+        console.log('Successfully unmuted');
+        setTerminalState('playing', 'Audio unmuted • streaming with sound');
+    } catch (err) {
+        console.warn('Unmute attempt failed:', err);
+        // Keep awaitingUnmute true to try again on next gesture
+    }
+}
+
 function safePlay(options = {}) {
     if (!player || typeof player.playVideo !== 'function') return;
 
@@ -203,6 +217,10 @@ function safePlay(options = {}) {
                 updatePlayPauseButton();
                 setTerminalState('playing', terminalMessage || terminalStates.playing.message);
                 updateMediaSessionState();
+                // Attempt unmute after successful play (but may still need gesture)
+                if (awaitingUnmute) {
+                    setTimeout(attemptUnmute, 100); // Slight delay to ensure play context
+                }
             }).catch(err => {
                 console.warn('Playback blocked:', err);
                 isPlaying = false;
@@ -224,6 +242,9 @@ function safePlay(options = {}) {
             updatePlayPauseButton();
             setTerminalState('playing', terminalMessage || terminalStates.playing.message);
             updateMediaSessionState();
+            if (awaitingUnmute) {
+                setTimeout(attemptUnmute, 100);
+            }
         }
     } catch (err) {
         console.error('safePlay error:', err);
@@ -242,19 +263,12 @@ function safePlay(options = {}) {
 function togglePlayPause() {
     if (!player) return;
     clearError();
+    attemptUnmute(); // Always try to unmute on user gesture
     if (isPlaying) {
         player.pauseVideo();
         pendingPlay = false;
     } else {
         pendingPlay = true;
-        if (awaitingUnmute) {
-            try {
-                player.unMute();
-                awaitingUnmute = false;
-            } catch (err) {
-                console.warn('Unable to unmute before playing:', err);
-            }
-        }
         safePlay({ terminalMessage: 'Resuming playback…' });
     }
 }
@@ -277,13 +291,8 @@ function setVolume(volume) {
     const vol = Math.max(0, Math.min(100, Number(volume)));
     if (player && typeof player.setVolume === 'function') {
         player.setVolume(vol);
-        if (vol > 0) {
-            try {
-                player.unMute();
-                awaitingUnmute = false;
-            } catch (err) {
-                console.warn('Unable to unmute when setting volume:', err);
-            }
+        if (vol > 0 && player.isMuted && player.isMuted()) {
+            attemptUnmute();
         }
     }
 }
@@ -401,7 +410,7 @@ function loadAudio() {
         width: '1',
         videoId: videoId,
         playerVars: {
-            autoplay: 1,
+            autoplay: isMobile ? 0 : 1, // Disable autoplay on mobile to avoid blocks
             playsinline: 1,
             controls: 0,
             disablekb: 1,
@@ -432,15 +441,12 @@ function onPlayerReady() {
 
     document.getElementById('song-title').textContent = title;
     document.getElementById('total-time').textContent = formatTime(duration);
-    document.getElementById('song-status').textContent = 'Priming playback…';
+    document.getElementById('song-status').textContent = isMobile ? 'Tap Play to start' : 'Priming playback…';
     document.getElementById('player-card').style.display = 'block';
 
     if (isMobile) {
-        try {
-            player.mute();
-        } catch (err) {
-            console.warn('Unable to mute on mobile init:', err);
-        }
+        player.mute(); // Mute initially on mobile
+        setTerminalState('idle', 'Ready • tap Play to start with sound');
     }
 
     setVolume(document.getElementById('volume-slider').value);
@@ -452,11 +458,18 @@ function onPlayerReady() {
     }
     updateInterval = setInterval(updateProgress, 500);
 
-    safePlay({
-        terminalMessage: 'Stream initiated • mobile friendly mode',
-        songStatus: 'Playing…',
-        notifyOnBlock: true
-    });
+    if (!isMobile) {
+        safePlay({
+            terminalMessage: 'Stream initiated • desktop mode',
+            songStatus: 'Playing…',
+            notifyOnBlock: true
+        });
+    } else if (pendingPlay) {
+        // On mobile, wait for user gesture, show prompt
+        pendingPlay = true;
+        isPlaying = false;
+        updatePlayPauseButton();
+    }
     updateTerminalInfo();
 }
 
@@ -673,15 +686,8 @@ function initProgressBar() {
 }
 
 function handleResumeGesture() {
+    attemptUnmute(); // Unmute on any user gesture
     if (pendingPlay && player && !isPlaying) {
-        if (awaitingUnmute) {
-            try {
-                player.unMute();
-            } catch (err) {
-                console.warn('Unable to unmute on resume gesture:', err);
-            }
-            awaitingUnmute = false;
-        }
         safePlay({ terminalMessage: 'Resuming after user interaction', showBlockNotice: false });
     }
 }
@@ -779,3 +785,4 @@ window.addEventListener('focus', () => {
 });
 document.addEventListener('click', handleResumeGesture);
 document.addEventListener('touchend', handleResumeGesture, { passive: true });
+</DOCUMENT>
