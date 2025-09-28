@@ -1,4 +1,3 @@
-<DOCUMENT filename="script.js">
 let player;
 let isPlaying = false;
 let isLooping = false;
@@ -785,4 +784,3 @@ window.addEventListener('focus', () => {
 });
 document.addEventListener('click', handleResumeGesture);
 document.addEventListener('touchend', handleResumeGesture, { passive: true });
-</DOCUMENT>
